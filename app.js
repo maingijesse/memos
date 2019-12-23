@@ -7,6 +7,10 @@ const flash = require("connect-flash");
 const session = require("express-session");
 
 const app = express();
+//load routes
+
+const memos = require("./routes/memos");
+const users = require("./routes/users");
 
 // establishing a db connection
 mongoose
@@ -20,10 +24,6 @@ mongoose
   .catch(err => {
     console.log(err);
   });
-
-// load memo model
-require("./models/Memo");
-const Memo = mongoose.model("memos");
 
 //static files
 app.use(express.static("public"));
@@ -67,88 +67,9 @@ app.get("/about", (req, res) => {
   res.render("about");
 });
 
-//get memos
-app.get("/memos", (req, res) => {
-  Memo.find({})
-    .sort({ date: "desc" })
-    .then(memos => {
-      res.render("memos/index", {
-        memos: memos
-      });
-    });
-});
-
-//adding memos
-app.get("/memos/add", (req, res) => {
-  res.render("memos/add");
-});
-
-//edit memo route
-app.get("/memos/edit/:id", (req, res) => {
-  Memo.findOne({
-    _id: req.params.id
-  }).then(memo => {
-    res.render("memos/edit", {
-      memo: memo
-    });
-  });
-});
-//edit memo in database action
-app.put("/memos/:id", (req, res) => {
-  Memo.findOne({
-    _id: req.params.id
-  }).then(memo => {
-    memo.title = req.body.title;
-    memo.details = req.body.details;
-    memo.save().then(memo => {
-      req.flash("success_msg", "Memo updated");
-      res.redirect("/memos");
-    });
-  });
-});
-
-//handle forms
-app.post("/memos", (req, res) => {
-  let errors = [];
-  if (!req.body.title) {
-    errors.push({ text: "Please add a title" });
-  }
-  if (!req.body.details) {
-    errors.push({ text: "Please add some details" });
-  }
-  if (errors.length > 0) {
-    res.render("memos/add", {
-      errors: errors,
-      title: req.body.title,
-      details: req.body.details
-    });
-  } else {
-    const newUser = {
-      title: req.body.title,
-      details: req.body.details
-    };
-    new Memo(newUser)
-      .save()
-      .then(memo => {
-        req.flash("success_msg", "New memo added");
-
-        res.redirect("/memos");
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  }
-});
-
-//delete memo
-app.delete("/memos/:id", (req, res) => {
-  Memo.deleteOne({
-    _id: req.params.id
-  }).then(() => {
-    req.flash("success_msg", "Memo successfully deleted");
-    res.redirect("/memos");
-  });
-});
+//user routes
+app.use("/memos", memos);
+app.use("/users", users);
 
 const port = 3000;
 
